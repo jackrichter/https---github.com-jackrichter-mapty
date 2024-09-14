@@ -1,6 +1,6 @@
 "use strict";
 
-// prettier-ignore (by Jonas)
+// prettier-ignore
 const months = [
 	"January",
 	"February",
