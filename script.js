@@ -24,40 +24,61 @@ const inputDuration = document.querySelector('.form__input--duration');
 const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
 
-let map, mapEvent;
+class App {
+  #map;
+  #mapEvent;
 
-// Using the browser's Geolocation Api
-if (navigator.geolocation) {
-  navigator.geolocation.getCurrentPosition(
-    function (position) {
-      // Using 'Destructuring' to get the corresponding variables values from object coords.
-      const { latitude } = position.coords;
-      const { longitude } = position.coords;
-      // console.log(`https://www.google.se/maps/@${latitude},${longitude}`);
+  constructor() {
+    this._getPosition();
+    form.addEventListener('submit', this._newWorkout.bind(this));
+    inputType.addEventListener('change', this._toggleElevationField);
+  }
 
-      const coords = [latitude, longitude];
-
-      // Adding Leaflet code example
-      map = L.map('map').setView(coords, 13);
-
-      L.tileLayer('https://tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      }).addTo(map);
-
-      // Event listener on the map
-      map.on('click', function (mapE) {
-        mapEvent = mapE;
-        form.classList.remove('hidden');
-        inputDistance.focus();
-      });
-    },
-    function () {
-      alert('Could not get your position.');
+  _getPosition() {
+    // Using the browser's Geolocation Api
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        this._loadMap.bind(this),
+        function () {
+          alert('Could not get your position.');
+        }
+      );
     }
-  );
+  }
 
-  form.addEventListener('submit', function (e) {
+  _loadMap(position) {
+    // Using 'Destructuring' to get the corresponding variables values from object coords.
+    const { latitude } = position.coords;
+    const { longitude } = position.coords;
+    // console.log(`https://www.google.se/maps/@${latitude},${longitude}`);
+
+    const coords = [latitude, longitude];
+    // console.log(this);
+
+    // Adding Leaflet code example
+    this.#map = L.map('map').setView(coords, 13);
+
+    L.tileLayer('https://tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(this.#map);
+
+    // Handling clicks on map
+    this.#map.on('click', this._showForm.bind(this));
+  }
+
+  _showForm(mapE) {
+    this.#mapEvent = mapE;
+    form.classList.remove('hidden');
+    inputDistance.focus();
+  }
+
+  _toggleElevationField() {
+    inputElevation.closest('.form__row').classList.toggle('form__row--hidden');
+    inputCadence.closest('.form__row').classList.toggle('form__row--hidden');
+  }
+
+  _newWorkout(e) {
     e.preventDefault();
 
     // Clear input fields
@@ -68,9 +89,9 @@ if (navigator.geolocation) {
         '';
 
     // Display Marker
-    const { lat, lng } = mapEvent.latlng;
+    const { lat, lng } = this.#mapEvent.latlng;
     L.marker([lat, lng])
-      .addTo(map)
+      .addTo(this.#map)
       .bindPopup(
         L.popup({
           maxWidth: 250,
@@ -82,10 +103,7 @@ if (navigator.geolocation) {
       )
       .setPopupContent('Workout')
       .openPopup();
-  });
-
-  inputType.addEventListener('change', function () {
-    inputElevation.closest('.form__row').classList.toggle('form__row--hidden');
-    inputCadence.closest('.form__row').classList.toggle('form__row--hidden');
-  });
+  }
 }
+
+const app = new App();
