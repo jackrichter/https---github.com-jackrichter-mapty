@@ -3,6 +3,7 @@
 class Workout {
   date = new Date();
   id = Date.now().toString(16).slice(-10);
+  clicks = 0;
 
   constructor(coords, distance, duration) {
     this.coords = coords; // [Lat, Lng]
@@ -34,6 +35,10 @@ class Running extends Workout {
     // min/km
     this.pace = this.duration / this.distance;
     return this.pace;
+  }
+
+  click() {
+    this.clicks++;
   }
 }
 
@@ -71,6 +76,7 @@ const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
 class App {
   #map;
+  #mapZoomLevel = 13;
   #mapEvent;
   #workouts = [];
 
@@ -78,6 +84,7 @@ class App {
     this._getPosition();
     form.addEventListener('submit', this._newWorkout.bind(this));
     inputType.addEventListener('change', this._toggleElevationField);
+    containerWorkouts.addEventListener('click', this._moveToPopup.bind(this));
   }
 
   _getPosition() {
@@ -102,7 +109,7 @@ class App {
     // console.log(this);
 
     // Adding Leaflet code example
-    this.#map = L.map('map').setView(coords, 13);
+    this.#map = L.map('map').setView(coords, this.#mapZoomLevel);
 
     L.tileLayer('https://tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
       attribution:
@@ -183,7 +190,7 @@ class App {
       workout = new Cycling([lat, lng], distance, duration, elevation);
     }
 
-    // Add the new object to workout array
+    // Add the new object to workouts array
     this.#workouts.push(workout);
     // console.log(workout);
 
@@ -264,6 +271,29 @@ class App {
     }
 
     form.insertAdjacentHTML('afterend', html);
+  }
+
+  _moveToPopup(e) {
+    const workoutEL = e.target.closest('.workout');
+    // console.log(workoutEL);
+
+    if (!workoutEL) return;
+
+    const workout = this.#workouts.find(
+      work => work.id === workoutEL.dataset.id
+    );
+
+    // Center the map to the workout in list
+    this.#map.setView(workout.coords, this.#mapZoomLevel, {
+      animate: true,
+      pan: {
+        duration: 1,
+      },
+    });
+
+    // Using the public interface
+    workout.click();
+    // console.log(workout);
   }
 }
 
